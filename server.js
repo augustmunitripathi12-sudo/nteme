@@ -1,11 +1,16 @@
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
 const path = require("path");
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
 
 app.use(express.static(__dirname));
 
@@ -15,77 +20,106 @@ app.get("/", (req, res) => {
 
 const players = {};
 const messages = [];
-const MAX_MESSAGES = 50;
 
-io.on("connection", (socket) => {
-  console.log("Player connected:", socket.id);
+function cleanName(name) {
+  const cleaned = String(name || "Player").trim().substring(0, 15);
+  return cleaned || "Player";
+}
 
-  players[socket.id] = {
-    id: socket.id,
+function cleanCharacter(character) {
+  return character === "blue" ? "blue" : "original";
+}
+
+function makePlayer(id) {
+  return {
+    id,
     x: 350,
     y: 250,
     frame: 0,
     facingLeft: false,
     currentDir: "front",
     name: "Player",
-    character: "original"
+    character: "original",
+    ready: false
   };
+}
 
-  socket.emit("currentPlayers", players);
+function snapshotPlayers() {
+  return Object.fromEntries(
+    Object.entries(players).map(([id, player]) => [id, { ...player }])
+  );
+}
+
+io.on("connection", (socket) => {
+  console.log("Player connected:", socket.id);
+
+  players[socket.id] = makePlayer(socket.id);
+
+  socket.emit("currentPlayers", snapshotPlayers());
   socket.emit("chatHistory", messages);
-  socket.broadcast.emit("playerJoined", players[socket.id]);
+  socket.emit("youAre", socket.id);
 
-  socket.on("setPlayerData", (data) => {
-    if (!players[socket.id]) return;
-    const name = (data.name || "").trim();
-    if (!name) return;
+  socket.broadcast.emit("playerJoined", { ...players[socket.id] });
 
-    players[socket.id].name = name.substring(0, 15);
-    players[socket.id].character = data.character || "original";
+  socket.on("setPlayerData", (data = {}) => {
+    const player = players[socket.id];
+    if (!player) return;
 
-    // Broadcast to ALL players including sender
-    io.emit("playerUpdated", players[socket.id]);
+    player.name = cleanName(data.name);
+    player.character = cleanCharacter(data.character);
+    player.ready = true;
+
+    io.emit("playerUpdated", { ...player });
+  });
+
+  socket.on("playerMovement", (data = {}) => {
+    const player = players[socket.id];
+    if (!player || !player.ready) return;
+
+    if (Number.isFinite(data.x)) player.x = data.x;
+    if (Number.isFinite(data.y)) player.y = data.y;
+    if (Number.isFinite(data.frame)) player.frame = data.frame;
+    if (typeof data.facingLeft === "boolean") player.facingLeft = data.facingLeft;
+    if (["front", "back", "side"].includes(data.currentDir)) {
+      player.currentDir = data.currentDir;
+    }
+
+    // IMPORTANT:
+    // Movement NEVER changes name or character.
+    // This stops skin/name from being overwritten by stale clients.
+    socket.broadcast.volatile.emit("playerMoved", { ...player });
   });
 
   socket.on("chatMessage", (text) => {
-    if (!text || !players[socket.id]) return;
+    const player = players[socket.id];
+    if (!player || !text) return;
+
     const msg = {
       id: socket.id,
-      name: players[socket.id].name,
-      text: text.substring(0, 200)
+      name: player.name,
+      text: String(text).substring(0, 200)
     };
+
     messages.push(msg);
-    if (messages.length > MAX_MESSAGES) messages.shift();
+
+    if (messages.length > 50) {
+      messages.shift();
+    }
+
     io.emit("chatMessage", msg);
-  });
-
-  socket.on("playerMovement", (data) => {
-    if (!players[socket.id]) return;
-
-    players[socket.id].x = data.x;
-    players[socket.id].y = data.y;
-    players[socket.id].frame = data.frame;
-    players[socket.id].facingLeft = data.facingLeft;
-    players[socket.id].currentDir = data.currentDir;
-
-    socket.broadcast.volatile.emit("playerMoved", {
-      id: socket.id,
-      x: data.x,
-      y: data.y,
-      frame: data.frame,
-      facingLeft: data.facingLeft,
-      currentDir: data.currentDir
-    });
   });
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
+
     delete players[socket.id];
     io.emit("playerDisconnected", socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log(`Server running on port ${PORT}`);
 });
+
