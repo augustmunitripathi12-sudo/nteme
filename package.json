@@ -1,0 +1,17 @@
+{
+  "name": "pixel-rpg-multiplayer",
+  "version": "1.0.0",
+  "description": "Multiplayer Pixel RPG Game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
