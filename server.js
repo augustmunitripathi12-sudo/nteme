@@ -80,13 +80,13 @@ io.on("connection", (socket) => {
     if (Number.isFinite(data.y)) player.y = data.y;
     if (Number.isFinite(data.frame)) player.frame = data.frame;
     if (typeof data.facingLeft === "boolean") player.facingLeft = data.facingLeft;
+
     if (["front", "back", "side"].includes(data.currentDir)) {
       player.currentDir = data.currentDir;
     }
 
-    // IMPORTANT:
     // Movement NEVER changes name or character.
-    // This stops skin/name from being overwritten by stale clients.
+    // This stops skin/name from being overwritten by old/default client values.
     socket.broadcast.volatile.emit("playerMoved", { ...player });
   });
 
@@ -111,6 +111,17 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
+
+    delete players[socket.id];
+    io.emit("playerDisconnected", socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
     delete players[socket.id];
     io.emit("playerDisconnected", socket.id);
