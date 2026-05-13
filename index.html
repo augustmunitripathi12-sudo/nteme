@@ -1,539 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Multiplayer Pixel RPG</title>
-
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-body{
-  overflow:hidden;
-  background:#111;
-  font-family:Arial,sans-serif;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-canvas{
-  background:#1a1a1a;
-  image-rendering:pixelated;
-  max-width:100vw;
-  max-height:100vh;
-}
-
-#start-screen{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:#222;
-  padding:30px;
-  border-radius:12px;
-  color:white;
-  text-align:center;
-  z-index:100;
-  box-shadow:0 10px 40px rgba(0,0,0,0.45);
-}
-
-.char-option{
-  display:inline-block;
-  margin:10px;
-  border:3px solid transparent;
-  border-radius:10px;
-  padding:8px;
-  cursor:pointer;
-  user-select:none;
-}
-
-.char-option:hover{
-  background:#2d2d2d;
-}
-
-.selected{
-  border-color:#4ade80;
-}
-
-input{
-  padding:10px;
-  width:220px;
-  margin-top:10px;
-  border:none;
-  border-radius:6px;
-  background:#333;
-  color:white;
-  font-size:16px;
-}
-
-button{
-  margin-top:10px;
-  padding:10px 20px;
-  background:#4ade80;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:16px;
-}
-
-#chat{
-  position:absolute;
-  left:10px;
-  bottom:10px;
-  width:300px;
-  background:rgba(0,0,0,0.85);
-  padding:10px;
-  border-radius:10px;
-  display:none;
-}
-
-#messages{
-  height:180px;
-  overflow-y:auto;
-  color:white;
-  margin-bottom:8px;
-  font-size:14px;
-}
-
-#chatInput{
-  width:100%;
-}
-
-#mobile-controls{
-  position:absolute;
-  bottom:20px;
-  right:20px;
-  display:none;
-  z-index:999;
-}
-
-.control-row{
-  display:flex;
-  justify-content:center;
-}
-
-.ctrl{
-  width:70px;
-  height:70px;
-  margin:5px;
-  border:none;
-  border-radius:12px;
-  background:rgba(255,255,255,0.2);
-  color:white;
-  font-size:28px;
-  backdrop-filter:blur(4px);
-}
-
-.ctrl:active{
-  background:#4ade80;
-}
-
-@media (max-width: 900px){
-  #mobile-controls{
-    display:block;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Pixel RPG</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            background: #111; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        canvas { 
+            background: #1a1a1a; 
+            image-rendering: pixelated; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #start-screen {
+            position: absolute; 
+            background: #222; 
+            padding: 30px; 
+            border-radius: 12px; 
+            color: white; 
+            text-align: center; 
+            z-index: 100;
+            border: 2px solid #444;
+        }
+        .char-option {
+            display: inline-block; 
+            margin: 10px; 
+            border: 3px solid transparent; 
+            border-radius: 10px; 
+            padding: 8px; 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .char-option:hover { background: #333; }
+        .selected { border-color: #4ade80; background: #2d2d2d; }
+        input { 
+            padding: 12px; 
+            width: 240px; 
+            margin-top: 15px; 
+            border: none; 
+            border-radius: 6px; 
+            background: #333; 
+            color: white; 
+        }
+        button { 
+            margin-top: 15px; 
+            padding: 10px 25px; 
+            background: #4ade80; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+        #chat {
+            position: absolute; 
+            left: 15px; 
+            bottom: 15px; 
+            width: 320px; 
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 10px; 
+            border-radius: 8px; 
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        #messages { 
+            height: 150px; 
+            overflow-y: auto; 
+            color: white; 
+            margin-bottom: 8px; 
+            font-size: 14px; 
+            text-shadow: 1px 1px 1px black;
+        }
+        #chatInput { width: 100%; margin-top: 0; background: rgba(255,255,255,0.1); }
+        #mobile-controls { position: absolute; bottom: 20px; right: 20px; display: none; }
+        .ctrl { width: 60px; height: 60px; margin: 5px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 24px; }
+        @media (max-width: 900px) { #mobile-controls { display: block; } }
+    </style>
 </head>
-
 <body>
 
 <canvas id="game" width="800" height="600"></canvas>
 
 <div id="start-screen">
-  <h2>Choose Character</h2>
-
-  <div class="char-option selected" data-char="original">
-    <img src="frontwalk_1.png" width="64" alt="Black Suit"><br>
-    Black Suit
-  </div>
-
-  <div class="char-option" data-char="blue">
-    <img src="bluefront1.png" width="64" alt="Blue Vest"><br>
-    Blue Vest
-  </div>
-
-  <br>
-  <input id="nameInput" maxlength="15" value="Player">
-  <br>
-  <button onclick="startGame()">Start Game</button>
+    <h2>Choose Character</h2>
+    <div class="char-option selected" data-char="original">
+        <img src="frontwalk_1.png" width="64" alt="Black Suit"><br>Black Suit
+    </div>
+    <div class="char-option" data-char="blue">
+        <img src="bluefront1.png" width="64" alt="Blue Vest"><br>Blue Vest
+    </div>
+    <br>
+    <input id="nameInput" maxlength="15" placeholder="Enter Name..." value="Player">
+    <br>
+    <button onclick="startGame()">Enter World</button>
 </div>
 
 <div id="chat">
-  <div id="messages"></div>
-  <input id="chatInput" placeholder="Type message...">
+    <div id="messages"></div>
+    <input id="chatInput" placeholder="Press Enter to chat...">
 </div>
 
 <div id="mobile-controls">
-  <div class="control-row">
-    <button class="ctrl" id="up">⬆</button>
-  </div>
-  <div class="control-row">
-    <button class="ctrl" id="left">⬅</button>
-    <button class="ctrl" id="down">⬇</button>
-    <button class="ctrl" id="right">➡</button>
-  </div>
+    <div style="text-align:center"><button class="ctrl" id="up">⬆</button></div>
+    <div>
+        <button class="ctrl" id="left">⬅</button>
+        <button class="ctrl" id="down">⬇</button>
+        <button class="ctrl" id="right">➡</button>
+    </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
 
-const socket = io();
-const keys = {};
+    const socket = io();
+    const keys = {};
 
-const SPRITE_WIDTH = 64;
-const SPRITE_HEIGHT = 160;
-const MOVE_SPEED = 2.4;
-const FRAME_DELAY = 10;
-const GROUND_OFFSET = 64;
+    const SPRITE_WIDTH = 64;
+    const SPRITE_HEIGHT = 160;
+    const MOVE_SPEED = 3.0;
+    const FRAME_DELAY = 8;
+    const GROUND_OFFSET = 120; // Adjusted based on tall sprites
 
-let animationTimer = 0;
-let gameStarted = false;
-let mySocketId = null;
+    let gameStarted = false;
+    let animationTimer = 0;
 
-function loadSprites(prefix, underscore=true){
-  return Array.from({length:4}, (_, i) => {
-    const img = new Image();
-    img.src = underscore ? `${prefix}_${i + 1}.png` : `${prefix}${i + 1}.png`;
-    return img;
-  });
-}
+    // Player State
+    let myPlayer = {
+        id: null,
+        x: 400,
+        y: 300,
+        frame: 0,
+        facingLeft: false,
+        currentDir: "front",
+        name: "Player",
+        character: "original",
+        ready: false
+    };
+    const otherPlayers = {};
 
-const characters = {
-  original:{
-    front:loadSprites("frontwalk", true),
-    back:loadSprites("backwalk", true),
-    side:loadSprites("rightwalk", true)
-  },
-  blue:{
-    front:loadSprites("bluefront", false),
-    back:loadSprites("blueback", false),
-    side:loadSprites("blueright", false)
-  }
-};
-
-const processedImages = new Map();
-
-function makeBlackTransparent(img){
-  if(processedImages.has(img.src)){
-    return processedImages.get(img.src);
-  }
-
-  const off = document.createElement("canvas");
-  off.width = img.naturalWidth || img.width || SPRITE_WIDTH;
-  off.height = img.naturalHeight || img.height || SPRITE_HEIGHT;
-
-  const offCtx = off.getContext("2d");
-  offCtx.drawImage(img, 0, 0);
-
-  const imageData = offCtx.getImageData(0, 0, off.width, off.height);
-  const data = imageData.data;
-
-  for(let i = 0; i < data.length; i += 4){
-    if(data[i] < 12 && data[i + 1] < 12 && data[i + 2] < 12){
-      data[i + 3] = 0;
+    // Sprite Loading Logic
+    function loadSprites(prefix, underscore = true) {
+        return Array.from({ length: 4 }, (_, i) => {
+            const img = new Image();
+            img.src = underscore ? `${prefix}_${i + 1}.png` : `${prefix}${i + 1}.png`;
+            return img;
+        });
     }
-  }
 
-  offCtx.putImageData(imageData, 0, 0);
-  processedImages.set(img.src, off);
-  return off;
-}
-
-let myPlayer = {
-  id:null,
-  x:350,
-  y:250,
-  frame:0,
-  facingLeft:false,
-  currentDir:"front",
-  name:"Player",
-  character:"original",
-  ready:false
-};
-
-const otherPlayers = {};
-
-function isMe(id){
-  return id && id === mySocketId;
-}
-
-function mergePlayerFromServer(player){
-  if(!player || !player.id) return;
-
-  if(isMe(player.id)){
-    myPlayer = {
-      ...myPlayer,
-      ...player,
-      id: player.id
+    const characters = {
+        original: {
+            front: loadSprites("frontwalk", true),
+            back: loadSprites("backwalk", true),
+            side: loadSprites("rightwalk", true)
+        },
+        blue: {
+            front: loadSprites("bluefront", false),
+            back: loadSprites("blueback", false),
+            side: loadSprites("blueright", false)
+        }
     };
 
-    delete otherPlayers[player.id];
-    return;
-  }
+    // Transparency Filter for Black Backgrounds
+    const processedImages = new Map();
+    function getFilteredImage(img) {
+        if (!img.complete) return img;
+        if (processedImages.has(img.src)) return processedImages.get(img.src);
 
-  otherPlayers[player.id] = {
-    ...(otherPlayers[player.id] || {}),
-    ...player
-  };
-}
+        const off = document.createElement("canvas");
+        off.width = img.width;
+        off.height = img.height;
+        const offCtx = off.getContext("2d");
+        offCtx.drawImage(img, 0, 0);
 
-function removeWrongSelfFromOthers(){
-  if(mySocketId && otherPlayers[mySocketId]){
-    delete otherPlayers[mySocketId];
-  }
-}
-
-socket.on("connect", () => {
-  mySocketId = socket.id;
-  myPlayer.id = socket.id;
-  removeWrongSelfFromOthers();
-});
-
-socket.on("youAre", (id) => {
-  mySocketId = id;
-  myPlayer.id = id;
-  removeWrongSelfFromOthers();
-});
-
-function startGame(){
-  const selectedCharacter = document.querySelector(".char-option.selected").dataset.char;
-  const selectedName = document.getElementById("nameInput").value.trim() || "Player";
-
-  myPlayer.name = selectedName;
-  myPlayer.character = selectedCharacter;
-  myPlayer.ready = true;
-  gameStarted = true;
-
-  document.getElementById("start-screen").style.display = "none";
-  document.getElementById("chat").style.display = "block";
-
-  socket.emit("setPlayerData", {
-    name: selectedName,
-    character: selectedCharacter
-  });
-}
-
-document.querySelectorAll(".char-option").forEach(el => {
-  el.addEventListener("click", () => {
-    document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
-    el.classList.add("selected");
-  });
-});
-
-socket.on("currentPlayers", (players) => {
-  Object.values(players).forEach(mergePlayerFromServer);
-  removeWrongSelfFromOthers();
-});
-
-socket.on("playerJoined", (player) => {
-  mergePlayerFromServer(player);
-});
-
-socket.on("playerUpdated", (player) => {
-  mergePlayerFromServer(player);
-});
-
-socket.on("playerMoved", (player) => {
-  mergePlayerFromServer(player);
-});
-
-socket.on("playerDisconnected", (id) => {
-  delete otherPlayers[id];
-});
-
-socket.on("chatHistory", (history) => {
-  history.forEach(addMessage);
-});
-
-socket.on("chatMessage", (msg) => {
-  addMessage(msg);
-});
-
-function addMessage(msg){
-  const div = document.createElement("div");
-  div.textContent = `${msg.name}: ${msg.text}`;
-  div.style.marginBottom = "5px";
-
-  if(msg.id === mySocketId){
-    div.style.color = "#4ade80";
-  }
-
-  document.getElementById("messages").appendChild(div);
-  div.scrollIntoView();
-}
-
-document.getElementById("chatInput").addEventListener("keypress", (e) => {
-  if(e.key === "Enter"){
-    const text = e.target.value.trim();
-    if(text){
-      socket.emit("chatMessage", text);
-      e.target.value = "";
-    }
-  }
-});
-
-function bindMobile(btn, key){
-  const el = document.getElementById(btn);
-
-  el.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    keys[key] = true;
-  }, { passive:false });
-
-  el.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    keys[key] = false;
-  }, { passive:false });
-
-  el.addEventListener("touchcancel", (e) => {
-    e.preventDefault();
-    keys[key] = false;
-  }, { passive:false });
-}
-
-bindMobile("up", "w");
-bindMobile("down", "s");
-bindMobile("left", "a");
-bindMobile("right", "d");
-
-function update(){
-  if(!gameStarted){
-    return;
-  }
-
-  let dx = 0;
-  let dy = 0;
-
-  if(keys["w"] || keys["arrowup"]) dy -= 1;
-  if(keys["s"] || keys["arrowdown"]) dy += 1;
-  if(keys["a"] || keys["arrowleft"]) dx -= 1;
-  if(keys["d"] || keys["arrowright"]) dx += 1;
-
-  const moving = dx !== 0 || dy !== 0;
-
-  if(moving){
-    const len = Math.hypot(dx, dy);
-    dx = (dx / len) * MOVE_SPEED;
-    dy = (dy / len) * MOVE_SPEED;
-
-    myPlayer.x += dx;
-    myPlayer.y += dy;
-
-    if(dy < 0){
-      myPlayer.currentDir = "back";
-    }else if(dy > 0){
-      myPlayer.currentDir = "front";
-    }else{
-      myPlayer.currentDir = "side";
+        const imageData = offCtx.getImageData(0, 0, off.width, off.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            // If pixel is very dark, make it transparent
+            if (data[i] < 15 && data[i + 1] < 15 && data[i + 2] < 15) {
+                data[i + 3] = 0;
+            }
+        }
+        offCtx.putImageData(imageData, 0, 0);
+        processedImages.set(img.src, off);
+        return off;
     }
 
-    if(dx !== 0){
-      myPlayer.facingLeft = dx < 0;
+    // Socket Events
+    socket.on("connect", () => { myPlayer.id = socket.id; });
+
+    socket.on("currentPlayers", (players) => {
+        Object.keys(players).forEach(id => {
+            if (id !== socket.id) otherPlayers[id] = players[id];
+        });
+    });
+
+    socket.on("playerJoined", (player) => {
+        if (player.id !== socket.id) otherPlayers[player.id] = player;
+    });
+
+    socket.on("playerMoved", (data) => {
+        if (otherPlayers[data.id]) {
+            // Update only movement fields to prevent character skin resetting
+            Object.assign(otherPlayers[data.id], data);
+        }
+    });
+
+    socket.on("playerDisconnected", (id) => { delete otherPlayers[id]; });
+
+    socket.on("chatMessage", (msg) => {
+        const msgDiv = document.createElement("div");
+        msgDiv.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+        const container = document.getElementById("messages");
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    });
+
+    // Interaction Logic
+    function startGame() {
+        const selectedChar = document.querySelector(".char-option.selected").dataset.char;
+        const name = document.getElementById("nameInput").value.trim() || "Player";
+
+        myPlayer.character = selectedChar;
+        myPlayer.name = name;
+        myPlayer.ready = true;
+        gameStarted = true;
+
+        document.getElementById("start-screen").style.display = "none";
+        document.getElementById("chat").style.display = "block";
+
+        socket.emit("setPlayerData", { name, character: selectedChar });
     }
 
-    animationTimer++;
+    document.querySelectorAll(".char-option").forEach(el => {
+        el.onclick = () => {
+            document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
+            el.classList.add("selected");
+        };
+    });
 
-    if(animationTimer >= FRAME_DELAY){
-      myPlayer.frame = (myPlayer.frame + 1) % 4;
-      animationTimer = 0;
+    // Game Loop
+    function update() {
+        if (!gameStarted) return;
+
+        // Don't move if typing
+        if (document.activeElement.tagName === "INPUT") return;
+
+        let dx = 0, dy = 0;
+        if (keys["w"] || keys["arrowup"]) dy -= 1;
+        if (keys["s"] || keys["arrowdown"]) dy += 1;
+        if (keys["a"] || keys["arrowleft"]) dx -= 1;
+        if (keys["d"] || keys["arrowright"]) dx += 1;
+
+        if (dx !== 0 || dy !== 0) {
+            const norm = Math.hypot(dx, dy);
+            myPlayer.x += (dx / norm) * MOVE_SPEED;
+            myPlayer.y += (dy / norm) * MOVE_SPEED;
+
+            // Constrain to canvas
+            myPlayer.x = Math.max(0, Math.min(canvas.width - SPRITE_WIDTH, myPlayer.x));
+            myPlayer.y = Math.max(GROUND_OFFSET, Math.min(canvas.height, myPlayer.y));
+
+            // Animation & Direction
+            if (dy < 0) myPlayer.currentDir = "back";
+            else if (dy > 0) myPlayer.currentDir = "front";
+            else myPlayer.currentDir = "side";
+
+            if (dx !== 0) myPlayer.facingLeft = dx < 0;
+
+            animationTimer++;
+            if (animationTimer >= FRAME_DELAY) {
+                myPlayer.frame = (myPlayer.frame + 1) % 4;
+                animationTimer = 0;
+            }
+
+            socket.emit("playerMovement", {
+                x: myPlayer.x,
+                y: myPlayer.y,
+                frame: myPlayer.frame,
+                facingLeft: myPlayer.facingLeft,
+                currentDir: myPlayer.currentDir
+            });
+        } else {
+            myPlayer.frame = 0;
+        }
     }
-  }else{
-    myPlayer.frame = 0;
-  }
 
-  // Movement sends ONLY movement.
-  // It does NOT send character/name, so it cannot overwrite the chosen skin.
-  socket.volatile.emit("playerMovement", {
-    x: myPlayer.x,
-    y: myPlayer.y,
-    frame: myPlayer.frame,
-    facingLeft: myPlayer.facingLeft,
-    currentDir: myPlayer.currentDir
-  });
-}
+    function drawPlayer(p) {
+        const charSet = characters[p.character] || characters.original;
+        let frames = charSet.front;
+        if (p.currentDir === "back") frames = charSet.back;
+        if (p.currentDir === "side") frames = charSet.side;
 
-function getFrames(player){
-  const char = characters[player.character] || characters.original;
+        let img = frames[p.frame || 0];
+        if (!img || !img.complete) return;
 
-  if(player.currentDir === "back"){
-    return char.back;
-  }
+        // Apply black-transparency filter
+        const finalImg = getFilteredImage(img);
 
-  if(player.currentDir === "side"){
-    return char.side;
-  }
+        const dx = Math.round(p.x);
+        const dy = Math.round(p.y - GROUND_OFFSET);
 
-  return char.front;
-}
+        ctx.save();
+        if (p.facingLeft) {
+            ctx.scale(-1, 1);
+            ctx.drawImage(finalImg, -dx - SPRITE_WIDTH, dy, SPRITE_WIDTH, SPRITE_HEIGHT);
+        } else {
+            ctx.drawImage(finalImg, dx, dy, SPRITE_WIDTH, SPRITE_HEIGHT);
+        }
+        ctx.restore();
 
-function drawPlayer(player){
-  if(!player) return;
-
-  const frames = getFrames(player);
-  let img = frames[player.frame || 0];
-
-  if(!img || !img.complete) return;
-
-  if(player.character === "blue"){
-    img = makeBlackTransparent(img);
-  }
-
-  const drawX = Math.round(player.x);
-  const drawY = Math.round(player.y - GROUND_OFFSET);
-
-  if(player.facingLeft){
-    ctx.save();
-    ctx.scale(-1, 1);
-    ctx.drawImage(img, -drawX - SPRITE_WIDTH, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
-    ctx.restore();
-  }else{
-    ctx.drawImage(img, drawX, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
-  }
-
-  ctx.fillStyle = "white";
-  ctx.font = "bold 14px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText(player.name || "Player", drawX + SPRITE_WIDTH / 2, drawY - 10);
-}
-
-function draw(){
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  Object.values(otherPlayers).forEach(player => {
-    if(player.ready){
-      drawPlayer(player);
+        // Name Tag
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(p.name, dx + SPRITE_WIDTH / 2, dy - 5);
     }
-  });
 
-  if(gameStarted){
-    drawPlayer(myPlayer);
-  }
-}
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
+        // Sort players by Y for depth perception (Y-Sorting)
+        const allPlayers = [...Object.values(otherPlayers), myPlayer]
+            .filter(p => p.ready)
+            .sort((a, b) => a.y - b.y);
 
-document.addEventListener("keydown", (e) => {
-  const tag = document.activeElement.tagName.toLowerCase();
+        allPlayers.forEach(drawPlayer);
+    }
 
-  if(tag === "input"){
-    return;
-  }
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
 
+    // Controls
+    window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+    document.getElementById("chatInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target.value.trim()) {
+            socket.emit("chatMessage", e.target.value);
+            e.target.value = "";
+        }
+    });
+
+    loop();
+</script>
+</body>
+</html>
   keys[e.key.toLowerCase()] = true;
 });
 
