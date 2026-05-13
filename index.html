@@ -9,7 +9,7 @@
         body { 
             overflow: hidden; 
             background: #111; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: Arial, sans-serif; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
@@ -18,17 +18,20 @@
         canvas { 
             background: #1a1a1a; 
             image-rendering: pixelated; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            max-width: 100vw; 
+            max-height: 100vh; 
         }
         #start-screen {
             position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
             background: #222; 
             padding: 30px; 
             border-radius: 12px; 
             color: white; 
             text-align: center; 
             z-index: 100;
-            border: 2px solid #444;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.45);
         }
         .char-option {
             display: inline-block; 
@@ -37,51 +40,40 @@
             border-radius: 10px; 
             padding: 8px; 
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .char-option:hover { background: #333; }
-        .selected { border-color: #4ade80; background: #2d2d2d; }
+        .char-option:hover { background: #2d2d2d; }
+        .selected { border-color: #4ade80; }
         input { 
-            padding: 12px; 
-            width: 240px; 
-            margin-top: 15px; 
-            border: none; 
-            border-radius: 6px; 
-            background: #333; 
-            color: white; 
+            padding: 10px; width: 220px; margin-top: 10px; 
+            border: none; border-radius: 6px; 
+            background: #333; color: white; font-size: 16px; 
         }
         button { 
-            margin-top: 15px; 
-            padding: 10px 25px; 
-            background: #4ade80; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
+            margin-top: 10px; padding: 10px 20px; 
+            background: #4ade80; border: none; 
+            border-radius: 6px; cursor: pointer; font-size: 16px; 
         }
         #chat {
-            position: absolute; 
-            left: 15px; 
-            bottom: 15px; 
-            width: 320px; 
-            background: rgba(0, 0, 0, 0.7); 
-            padding: 10px; 
-            border-radius: 8px; 
-            display: none;
-            backdrop-filter: blur(5px);
+            position: absolute; left: 10px; bottom: 10px; 
+            width: 300px; background: rgba(0,0,0,0.8); 
+            padding: 10px; border-radius: 10px; display: none;
         }
         #messages { 
-            height: 150px; 
-            overflow-y: auto; 
-            color: white; 
-            margin-bottom: 8px; 
-            font-size: 14px; 
-            text-shadow: 1px 1px 1px black;
+            height: 180px; overflow-y: auto; 
+            color: white; margin-bottom: 8px; font-size: 14px; 
         }
-        #chatInput { width: 100%; margin-top: 0; background: rgba(255,255,255,0.1); }
-        #mobile-controls { position: absolute; bottom: 20px; right: 20px; display: none; }
-        .ctrl { width: 60px; height: 60px; margin: 5px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 24px; }
-        @media (max-width: 900px) { #mobile-controls { display: block; } }
+        #chatInput { width: 100%; }
+        #mobile-controls { 
+            position: absolute; bottom: 20px; right: 20px; 
+            display: none; z-index: 999; 
+        }
+        .control-row { display: flex; justify-content: center; }
+        .ctrl { 
+            width: 70px; height: 70px; margin: 5px; border: none; 
+            border-radius: 12px; background: rgba(255,255,255,0.2); 
+            color: white; font-size: 28px; backdrop-filter: blur(4px); 
+        }
+        @media (max-width: 900px){ #mobile-controls { display: block; } }
     </style>
 </head>
 <body>
@@ -97,19 +89,19 @@
         <img src="bluefront1.png" width="64" alt="Blue Vest"><br>Blue Vest
     </div>
     <br>
-    <input id="nameInput" maxlength="15" placeholder="Enter Name..." value="Player">
+    <input id="nameInput" maxlength="15" value="Player">
     <br>
-    <button onclick="startGame()">Enter World</button>
+    <button onclick="startGame()">Start Game</button>
 </div>
 
 <div id="chat">
     <div id="messages"></div>
-    <input id="chatInput" placeholder="Press Enter to chat...">
+    <input id="chatInput" placeholder="Type message...">
 </div>
 
 <div id="mobile-controls">
-    <div style="text-align:center"><button class="ctrl" id="up">⬆</button></div>
-    <div>
+    <div class="control-row"><button class="ctrl" id="up">⬆</button></div>
+    <div class="control-row">
         <button class="ctrl" id="left">⬅</button>
         <button class="ctrl" id="down">⬇</button>
         <button class="ctrl" id="right">➡</button>
@@ -117,253 +109,233 @@
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
-    const socket = io();
-    const keys = {};
+const socket = io();
+const keys = {};
 
-    const SPRITE_WIDTH = 64;
-    const SPRITE_HEIGHT = 160;
-    const MOVE_SPEED = 3.0;
-    const FRAME_DELAY = 8;
-    const GROUND_OFFSET = 120; // Adjusted based on tall sprites
+const SPRITE_WIDTH = 64;
+const SPRITE_HEIGHT = 160;
+const MOVE_SPEED = 2.4;
+const FRAME_DELAY = 10;
+const GROUND_OFFSET = 64;
 
-    let gameStarted = false;
-    let animationTimer = 0;
+let animationTimer = 0;
+let gameStarted = false;
+let mySocketId = null;
 
-    // Player State
-    let myPlayer = {
-        id: null,
-        x: 400,
-        y: 300,
-        frame: 0,
-        facingLeft: false,
-        currentDir: "front",
-        name: "Player",
-        character: "original",
-        ready: false
-    };
-    const otherPlayers = {};
-
-    // Sprite Loading Logic
-    function loadSprites(prefix, underscore = true) {
-        return Array.from({ length: 4 }, (_, i) => {
-            const img = new Image();
-            img.src = underscore ? `${prefix}_${i + 1}.png` : `${prefix}${i + 1}.png`;
-            return img;
-        });
-    }
-
-    const characters = {
-        original: {
-            front: loadSprites("frontwalk", true),
-            back: loadSprites("backwalk", true),
-            side: loadSprites("rightwalk", true)
-        },
-        blue: {
-            front: loadSprites("bluefront", false),
-            back: loadSprites("blueback", false),
-            side: loadSprites("blueright", false)
-        }
-    };
-
-    // Transparency Filter for Black Backgrounds
-    const processedImages = new Map();
-    function getFilteredImage(img) {
-        if (!img.complete) return img;
-        if (processedImages.has(img.src)) return processedImages.get(img.src);
-
-        const off = document.createElement("canvas");
-        off.width = img.width;
-        off.height = img.height;
-        const offCtx = off.getContext("2d");
-        offCtx.drawImage(img, 0, 0);
-
-        const imageData = offCtx.getImageData(0, 0, off.width, off.height);
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            // If pixel is very dark, make it transparent
-            if (data[i] < 15 && data[i + 1] < 15 && data[i + 2] < 15) {
-                data[i + 3] = 0;
-            }
-        }
-        offCtx.putImageData(imageData, 0, 0);
-        processedImages.set(img.src, off);
-        return off;
-    }
-
-    // Socket Events
-    socket.on("connect", () => { myPlayer.id = socket.id; });
-
-    socket.on("currentPlayers", (players) => {
-        Object.keys(players).forEach(id => {
-            if (id !== socket.id) otherPlayers[id] = players[id];
-        });
+// Sprite Loader
+function loadSprites(prefix, underscore=true){
+    return Array.from({length:4}, (_, i) => {
+        const img = new Image();
+        img.src = underscore ? `${prefix}_${i + 1}.png` : `${prefix}${i + 1}.png`;
+        return img;
     });
+}
 
-    socket.on("playerJoined", (player) => {
-        if (player.id !== socket.id) otherPlayers[player.id] = player;
-    });
-
-    socket.on("playerMoved", (data) => {
-        if (otherPlayers[data.id]) {
-            // Update only movement fields to prevent character skin resetting
-            Object.assign(otherPlayers[data.id], data);
-        }
-    });
-
-    socket.on("playerDisconnected", (id) => { delete otherPlayers[id]; });
-
-    socket.on("chatMessage", (msg) => {
-        const msgDiv = document.createElement("div");
-        msgDiv.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
-        const container = document.getElementById("messages");
-        container.appendChild(msgDiv);
-        container.scrollTop = container.scrollHeight;
-    });
-
-    // Interaction Logic
-    function startGame() {
-        const selectedChar = document.querySelector(".char-option.selected").dataset.char;
-        const name = document.getElementById("nameInput").value.trim() || "Player";
-
-        myPlayer.character = selectedChar;
-        myPlayer.name = name;
-        myPlayer.ready = true;
-        gameStarted = true;
-
-        document.getElementById("start-screen").style.display = "none";
-        document.getElementById("chat").style.display = "block";
-
-        socket.emit("setPlayerData", { name, character: selectedChar });
+const characters = {
+    original: {
+        front: loadSprites("frontwalk", true),
+        back: loadSprites("backwalk", true),
+        side: loadSprites("rightwalk", true)
+    },
+    blue: {
+        front: loadSprites("bluefront", false),
+        back: loadSprites("blueback", false),
+        side: loadSprites("blueright", false)
     }
+};
 
-    document.querySelectorAll(".char-option").forEach(el => {
-        el.onclick = () => {
-            document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
-            el.classList.add("selected");
-        };
+const processedImages = new Map();
+function makeBlackTransparent(img){
+    if(!img.complete) return img;
+    if(processedImages.has(img.src)) return processedImages.get(img.src);
+
+    const off = document.createElement("canvas");
+    off.width = img.width || SPRITE_WIDTH;
+    off.height = img.height || SPRITE_HEIGHT;
+    const offCtx = off.getContext("2d");
+    offCtx.drawImage(img, 0, 0);
+
+    const imageData = offCtx.getImageData(0, 0, off.width, off.height);
+    const data = imageData.data;
+    for(let i = 0; i < data.length; i += 4){
+        if(data[i] < 15 && data[i + 1] < 15 && data[i + 2] < 15) data[i + 3] = 0;
+    }
+    offCtx.putImageData(imageData, 0, 0);
+    processedImages.set(img.src, off);
+    return off;
+}
+
+let myPlayer = {
+    id: null, x: 350, y: 250, frame: 0,
+    facingLeft: false, currentDir: "front",
+    name: "Player", character: "original", ready: false
+};
+
+const otherPlayers = {};
+
+// Socket Listeners
+socket.on("connect", () => { mySocketId = socket.id; myPlayer.id = socket.id; });
+socket.on("youAre", (id) => { mySocketId = id; myPlayer.id = id; });
+
+socket.on("currentPlayers", (players) => {
+    Object.keys(players).forEach(id => {
+        if(id !== mySocketId) otherPlayers[id] = players[id];
     });
-
-    // Game Loop
-    function update() {
-        if (!gameStarted) return;
-
-        // Don't move if typing
-        if (document.activeElement.tagName === "INPUT") return;
-
-        let dx = 0, dy = 0;
-        if (keys["w"] || keys["arrowup"]) dy -= 1;
-        if (keys["s"] || keys["arrowdown"]) dy += 1;
-        if (keys["a"] || keys["arrowleft"]) dx -= 1;
-        if (keys["d"] || keys["arrowright"]) dx += 1;
-
-        if (dx !== 0 || dy !== 0) {
-            const norm = Math.hypot(dx, dy);
-            myPlayer.x += (dx / norm) * MOVE_SPEED;
-            myPlayer.y += (dy / norm) * MOVE_SPEED;
-
-            // Constrain to canvas
-            myPlayer.x = Math.max(0, Math.min(canvas.width - SPRITE_WIDTH, myPlayer.x));
-            myPlayer.y = Math.max(GROUND_OFFSET, Math.min(canvas.height, myPlayer.y));
-
-            // Animation & Direction
-            if (dy < 0) myPlayer.currentDir = "back";
-            else if (dy > 0) myPlayer.currentDir = "front";
-            else myPlayer.currentDir = "side";
-
-            if (dx !== 0) myPlayer.facingLeft = dx < 0;
-
-            animationTimer++;
-            if (animationTimer >= FRAME_DELAY) {
-                myPlayer.frame = (myPlayer.frame + 1) % 4;
-                animationTimer = 0;
-            }
-
-            socket.emit("playerMovement", {
-                x: myPlayer.x,
-                y: myPlayer.y,
-                frame: myPlayer.frame,
-                facingLeft: myPlayer.facingLeft,
-                currentDir: myPlayer.currentDir
-            });
-        } else {
-            myPlayer.frame = 0;
-        }
-    }
-
-    function drawPlayer(p) {
-        const charSet = characters[p.character] || characters.original;
-        let frames = charSet.front;
-        if (p.currentDir === "back") frames = charSet.back;
-        if (p.currentDir === "side") frames = charSet.side;
-
-        let img = frames[p.frame || 0];
-        if (!img || !img.complete) return;
-
-        // Apply black-transparency filter
-        const finalImg = getFilteredImage(img);
-
-        const dx = Math.round(p.x);
-        const dy = Math.round(p.y - GROUND_OFFSET);
-
-        ctx.save();
-        if (p.facingLeft) {
-            ctx.scale(-1, 1);
-            ctx.drawImage(finalImg, -dx - SPRITE_WIDTH, dy, SPRITE_WIDTH, SPRITE_HEIGHT);
-        } else {
-            ctx.drawImage(finalImg, dx, dy, SPRITE_WIDTH, SPRITE_HEIGHT);
-        }
-        ctx.restore();
-
-        // Name Tag
-        ctx.fillStyle = "white";
-        ctx.font = "14px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(p.name, dx + SPRITE_WIDTH / 2, dy - 5);
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Sort players by Y for depth perception (Y-Sorting)
-        const allPlayers = [...Object.values(otherPlayers), myPlayer]
-            .filter(p => p.ready)
-            .sort((a, b) => a.y - b.y);
-
-        allPlayers.forEach(drawPlayer);
-    }
-
-    function loop() {
-        update();
-        draw();
-        requestAnimationFrame(loop);
-    }
-
-    // Controls
-    window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
-    window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
-
-    document.getElementById("chatInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && e.target.value.trim()) {
-            socket.emit("chatMessage", e.target.value);
-            e.target.value = "";
-        }
-    });
-
-    loop();
-</script>
-</body>
-</html>
-  keys[e.key.toLowerCase()] = true;
 });
 
-document.addEventListener("keyup", (e) => {
-  keys[e.key.toLowerCase()] = false;
+socket.on("playerJoined", (player) => {
+    if(player.id !== mySocketId) otherPlayers[player.id] = player;
 });
+
+socket.on("playerUpdated", (player) => {
+    if(player.id === mySocketId) {
+        Object.assign(myPlayer, player);
+    } else {
+        otherPlayers[player.id] = player;
+    }
+});
+
+socket.on("playerMoved", (data) => {
+    if(otherPlayers[data.id]) {
+        // Sync movement data without overwriting name/skin
+        Object.assign(otherPlayers[data.id], data);
+    }
+});
+
+socket.on("playerDisconnected", (id) => { delete otherPlayers[id]; });
+
+socket.on("chatHistory", (history) => { history.forEach(addMessage); });
+socket.on("chatMessage", (msg) => { addMessage(msg); });
+
+function addMessage(msg){
+    const div = document.createElement("div");
+    div.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+    div.style.color = msg.id === mySocketId ? "#4ade80" : "white";
+    const msgBox = document.getElementById("messages");
+    msgBox.appendChild(div);
+    msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+// Game Functions
+function startGame(){
+    const selectedChar = document.querySelector(".char-option.selected").dataset.char;
+    const selectedName = document.getElementById("nameInput").value.trim() || "Player";
+
+    myPlayer.name = selectedName;
+    myPlayer.character = selectedChar;
+    myPlayer.ready = true;
+    gameStarted = true;
+
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("chat").style.display = "block";
+
+    socket.emit("setPlayerData", { name: selectedName, character: selectedChar });
+}
+
+function update(){
+    if(!gameStarted || document.activeElement.tagName === "INPUT") return;
+
+    let dx = 0, dy = 0;
+    if(keys["w"] || keys["arrowup"]) dy -= 1;
+    if(keys["s"] || keys["arrowdown"]) dy += 1;
+    if(keys["a"] || keys["arrowleft"]) dx -= 1;
+    if(keys["d"] || keys["arrowright"]) dx += 1;
+
+    if(dx !== 0 || dy !== 0){
+        const len = Math.hypot(dx, dy);
+        myPlayer.x += (dx / len) * MOVE_SPEED;
+        myPlayer.y += (dy / len) * MOVE_SPEED;
+
+        if(dy < 0) myPlayer.currentDir = "back";
+        else if(dy > 0) myPlayer.currentDir = "front";
+        else myPlayer.currentDir = "side";
+
+        if(dx !== 0) myPlayer.facingLeft = dx < 0;
+
+        animationTimer++;
+        if(animationTimer >= FRAME_DELAY){
+            myPlayer.frame = (myPlayer.frame + 1) % 4;
+            animationTimer = 0;
+        }
+
+        socket.emit("playerMovement", {
+            x: myPlayer.x, y: myPlayer.y, frame: myPlayer.frame,
+            facingLeft: myPlayer.facingLeft, currentDir: myPlayer.currentDir
+        });
+    } else {
+        myPlayer.frame = 0;
+    }
+}
+
+function drawPlayer(player){
+    const char = characters[player.character] || characters.original;
+    let frames = char.front;
+    if(player.currentDir === "back") frames = char.back;
+    if(player.currentDir === "side") frames = char.side;
+
+    let img = frames[player.frame || 0];
+    if(!img || !img.complete) return;
+    
+    img = makeBlackTransparent(img);
+
+    const drawX = Math.round(player.x);
+    const drawY = Math.round(player.y - GROUND_OFFSET);
+
+    ctx.save();
+    if(player.facingLeft){
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, -drawX - SPRITE_WIDTH, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
+    } else {
+        ctx.drawImage(img, drawX, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(player.name, drawX + SPRITE_WIDTH / 2, drawY - 10);
+}
+
+function draw(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Y-Sorting: Draw players in order of their Y position
+    const allPlayers = [...Object.values(otherPlayers), myPlayer]
+        .filter(p => p.ready)
+        .sort((a, b) => a.y - b.y);
+
+    allPlayers.forEach(drawPlayer);
+}
+
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// Input Handlers
+document.querySelectorAll(".char-option").forEach(el => {
+    el.onclick = () => {
+        document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
+        el.classList.add("selected");
+    };
+});
+
+document.getElementById("chatInput").addEventListener("keypress", (e) => {
+    if(e.key === "Enter"){
+        const text = e.target.value.trim();
+        if(text) { socket.emit("chatMessage", text); e.target.value = ""; }
+    }
+});
+
+window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
 
 loop();
 </script>
