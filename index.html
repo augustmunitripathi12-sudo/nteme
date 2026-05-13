@@ -513,8 +513,12 @@ socket.on("playerMoved", (player) => {
   }
 });
 
+// *** THE FIX: when server confirms our own playerUpdated, sync myPlayer ***
 socket.on("playerUpdated", (player) => {
-  if (player.id !== socket.id) {
+  if (player.id === socket.id) {
+    myPlayer.name = player.name;
+    myPlayer.character = player.character;
+  } else {
     otherPlayers[player.id] = player;
   }
 });
@@ -768,6 +772,9 @@ function fitCanvas() {
 window.addEventListener("resize", fitCanvas);
 fitCanvas();
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
