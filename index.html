@@ -2,334 +2,188 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Multiplayer Pixel RPG</title>
+
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-html, body {
-  overflow: hidden;
-  background: #0d0d0d;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  height: 100vh;
-  width: 100vw;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
+body{
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-#game-wrapper {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+canvas{
+  background:#1a1a1a;
+  image-rendering:pixelated;
+  max-width:100vw;
+  max-height:100vh;
 }
 
-canvas {
-  background: #1a1a1a;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  box-shadow: 0 0 40px rgba(0,0,0,0.8);
+#start-screen{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:#222;
+  padding:30px;
+  border-radius:12px;
+  color:white;
+  text-align:center;
+  z-index:100;
+  box-shadow:0 10px 40px rgba(0,0,0,0.45);
 }
 
-#start-screen {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #1e1e1e;
-  padding: 35px 30px;
-  border-radius: 16px;
-  color: white;
-  text-align: center;
-  z-index: 100;
-  min-width: 320px;
-  border: 1px solid #333;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+.char-option{
+  display:inline-block;
+  margin:10px;
+  border:3px solid transparent;
+  border-radius:10px;
+  padding:8px;
+  cursor:pointer;
+  user-select:none;
 }
 
-#start-screen h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  letter-spacing: 1px;
+.char-option:hover{
+  background:#2d2d2d;
 }
 
-.char-select {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
+.selected{
+  border-color:#4ade80;
 }
 
-.char-option {
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 12px;
-  border: 3px solid transparent;
-  background: #2a2a2a;
-  transition: all 0.15s ease;
-  min-width: 100px;
+input{
+  padding:10px;
+  width:220px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+  background:#333;
+  color:white;
+  font-size:16px;
 }
 
-.char-option:hover {
-  background: #333;
-  transform: translateY(-2px);
+button{
+  margin-top:10px;
+  padding:10px 20px;
+  background:#4ade80;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:16px;
 }
 
-.char-option.selected {
-  border-color: #4ade80;
-  background: #223322;
+#chat{
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  width:300px;
+  background:rgba(0,0,0,0.85);
+  padding:10px;
+  border-radius:10px;
+  display:none;
 }
 
-.char-option img {
-  display: block;
-  margin: 0 auto 8px;
-  width: 64px;
-  height: auto;
-  image-rendering: pixelated;
+#messages{
+  height:180px;
+  overflow-y:auto;
+  color:white;
+  margin-bottom:8px;
+  font-size:14px;
 }
 
-.char-option span {
-  font-size: 13px;
-  color: #ccc;
+#chatInput{
+  width:100%;
 }
 
-#nameInput {
-  padding: 12px;
-  width: 240px;
-  margin-top: 10px;
-  border: 2px solid #444;
-  border-radius: 8px;
-  background: #2a2a2a;
-  color: white;
-  font-size: 16px;
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s;
+#mobile-controls{
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  display:none;
+  z-index:999;
 }
 
-#nameInput:focus {
-  border-color: #4ade80;
+.control-row{
+  display:flex;
+  justify-content:center;
 }
 
-#nameInput.error {
-  border-color: #ff4444;
-  animation: shake 0.3s ease;
+.ctrl{
+  width:70px;
+  height:70px;
+  margin:5px;
+  border:none;
+  border-radius:12px;
+  background:rgba(255,255,255,0.2);
+  color:white;
+  font-size:28px;
+  backdrop-filter:blur(4px);
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
+.ctrl:active{
+  background:#4ade80;
 }
 
-#startBtn {
-  margin-top: 18px;
-  padding: 12px 36px;
-  background: #4ade80;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  color: #0d1f0d;
-  transition: all 0.15s;
-}
-
-#startBtn:disabled {
-  background: #555;
-  color: #aaa;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-#startBtn:hover:not(:disabled) {
-  background: #22c55e;
-  transform: scale(1.05);
-}
-
-#startBtn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-#instructions {
-  margin-top: 18px;
-  font-size: 12px;
-  color: #888;
-  line-height: 1.6;
-}
-
-#chat {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  width: 320px;
-  max-width: calc(100vw - 160px);
-  background: rgba(10,10,10,0.92);
-  padding: 12px;
-  border-radius: 12px;
-  display: none;
-  z-index: 50;
-  border: 1px solid #333;
-}
-
-#messages {
-  height: 160px;
-  overflow-y: auto;
-  color: white;
-  margin-bottom: 10px;
-  font-size: 13px;
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-#messages::-webkit-scrollbar { width: 6px; }
-#messages::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-
-#chatInput {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #222;
-  color: white;
-  font-size: 13px;
-  outline: none;
-}
-
-#chatInput:focus {
-  border-color: #4ade80;
-}
-
-#chat-hint {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  color: rgba(255,255,255,0.5);
-  font-size: 12px;
-  display: none;
-  z-index: 49;
-  pointer-events: none;
-}
-
-#mobile-controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  display: none;
-  z-index: 999;
-}
-
-.control-row {
-  display: flex;
-  justify-content: center;
-}
-
-.ctrl {
-  width: 65px;
-  height: 65px;
-  margin: 4px;
-  border: none;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.15);
-  color: white;
-  font-size: 26px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  touch-action: manipulation;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.1s;
-}
-
-.ctrl:active, .ctrl.pressed {
-  background: #4ade80;
-  color: #111;
-}
-
-#player-count {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  color: rgba(255,255,255,0.6);
-  font-size: 13px;
-  z-index: 40;
-  display: none;
-}
-
-@media (max-width: 900px) {
-  #mobile-controls { display: block; }
-  #chat { width: calc(100vw - 160px); left: 10px; bottom: 10px; }
-  #chat-hint { bottom: 100px; }
-}
-
-@media (max-width: 600px) {
-  .ctrl { width: 55px; height: 55px; font-size: 22px; }
-  #start-screen { min-width: 280px; padding: 25px 20px; }
+@media (max-width: 900px){
+  #mobile-controls{
+    display:block;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div id="game-wrapper">
-  <canvas id="game" width="800" height="600"></canvas>
-</div>
+<canvas id="game" width="800" height="600"></canvas>
 
 <div id="start-screen">
   <h2>Choose Character</h2>
-  <div class="char-select">
-    <div class="char-option selected" data-char="original" onclick="selectChar(this)">
-      <img src="frontwalk_1.png" alt="Black Suit">
-      <span>Black Suit</span>
-    </div>
-    <div class="char-option" data-char="blue" onclick="selectChar(this)">
-      <img src="bluefront1.png" alt="Blue Vest">
-      <span>Blue Vest</span>
-    </div>
+
+  <div class="char-option selected" data-char="original">
+    <img src="frontwalk_1.png" width="64" alt="Black Suit"><br>
+    Black Suit
   </div>
-  <input id="nameInput" maxlength="15" placeholder="Enter your name" autocomplete="off" spellcheck="false">
+
+  <div class="char-option" data-char="blue">
+    <img src="bluefront1.png" width="64" alt="Blue Vest"><br>
+    Blue Vest
+  </div>
+
   <br>
-  <button id="startBtn" onclick="startGame()" disabled>Loading sprites...</button>
-  <div id="instructions">
-    Desktop: <b>WASD</b> or <b>Arrow Keys</b> to move<br>
-    Mobile: Use the on-screen D-Pad<br>
-    <b>Enter</b> to open chat
-  </div>
+  <input id="nameInput" maxlength="15" value="Player">
+  <br>
+  <button onclick="startGame()">Start Game</button>
 </div>
 
 <div id="chat">
   <div id="messages"></div>
-  <input id="chatInput" placeholder="Type message..." autocomplete="off" spellcheck="false">
+  <input id="chatInput" placeholder="Type message...">
 </div>
-
-<div id="chat-hint">Press Enter to chat</div>
 
 <div id="mobile-controls">
   <div class="control-row">
-    <button class="ctrl" id="up">&#9650;</button>
+    <button class="ctrl" id="up">⬆</button>
   </div>
   <div class="control-row">
-    <button class="ctrl" id="left">&#9664;</button>
-    <button class="ctrl" id="down">&#9660;</button>
-    <button class="ctrl" id="right">&#9654;</button>
+    <button class="ctrl" id="left">⬅</button>
+    <button class="ctrl" id="down">⬇</button>
+    <button class="ctrl" id="right">➡</button>
   </div>
 </div>
 
-<div id="player-count">Players online: 1</div>
-
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
-/* ========== SETUP ========== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
@@ -339,195 +193,164 @@ const keys = {};
 
 const SPRITE_WIDTH = 64;
 const SPRITE_HEIGHT = 160;
-const MOVE_SPEED = 2.6;
-const FRAME_DELAY = 7;
+const MOVE_SPEED = 2.4;
+const FRAME_DELAY = 10;
 const GROUND_OFFSET = 64;
-const CANVAS_W = 800;
-const CANVAS_H = 600;
 
 let animationTimer = 0;
-let chatFocused = false;
 let gameStarted = false;
-let imagesReady = false;
+let mySocketId = null;
 
-/* ========== IMAGE CACHE ========== */
-const imageCache = {};
-const processedCache = {};
-
-function getImage(src) {
-  return imageCache[src] || null;
+function loadSprites(prefix, underscore=true){
+  return Array.from({length:4}, (_, i) => {
+    const img = new Image();
+    img.src = underscore ? `${prefix}_${i + 1}.png` : `${prefix}${i + 1}.png`;
+    return img;
+  });
 }
 
-function makeBlackTransparent(img) {
-  if (!img || !img.complete || img.naturalWidth === 0) return null;
-  if (processedCache[img.src]) return processedCache[img.src];
-
-  const w = img.naturalWidth || SPRITE_WIDTH;
-  const h = img.naturalHeight || SPRITE_HEIGHT;
-  const off = document.createElement("canvas");
-  off.width = w;
-  off.height = h;
-  const c = off.getContext("2d");
-  c.drawImage(img, 0, 0);
-
-  const imageData = c.getImageData(0, 0, w, h);
-  const d = imageData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i] < 12 && d[i+1] < 12 && d[i+2] < 12) {
-      d[i+3] = 0;
-    }
-  }
-  c.putImageData(imageData, 0, 0);
-  processedCache[img.src] = off;
-  return off;
-}
-
-/* ========== CHARACTERS ========== */
 const characters = {
-  original: {
-    front: ["frontwalk_1.png","frontwalk_2.png","frontwalk_3.png","frontwalk_4.png"],
-    back:  ["backwalk_1.png","backwalk_2.png","backwalk_3.png","backwalk_4.png"],
-    side:  ["rightwalk_1.png","rightwalk_2.png","rightwalk_3.png","rightwalk_4.png"]
+  original:{
+    front:loadSprites("frontwalk", true),
+    back:loadSprites("backwalk", true),
+    side:loadSprites("rightwalk", true)
   },
-  blue: {
-    front: ["bluefront1.png","bluefront2.png","bluefront3.png","bluefront4.png"],
-    back:  ["blueback1.png","blueback2.png","blueback3.png","blueback4.png"],
-    side:  ["blueright1.png","blueright2.png","blueright3.png","blueright4.png"]
+  blue:{
+    front:loadSprites("bluefront", false),
+    back:loadSprites("blueback", false),
+    side:loadSprites("blueright", false)
   }
 };
 
-/* ========== PRELOAD ALL IMAGES ========== */
-const allImageSrcs = [];
-Object.values(characters).forEach(ch => {
-  ["front","back","side"].forEach(dir => {
-    ch[dir].forEach(src => {
-      if (!allImageSrcs.includes(src)) allImageSrcs.push(src);
-    });
-  });
-});
+const processedImages = new Map();
 
-let preloadCount = 0;
-const preloadTotal = allImageSrcs.length;
-
-function updateStartButton() {
-  const btn = document.getElementById("startBtn");
-  if (preloadCount >= preloadTotal) {
-    imagesReady = true;
-    btn.disabled = false;
-    btn.textContent = "Enter World";
-  } else {
-    btn.disabled = true;
-    btn.textContent = "Loading sprites... (" + preloadCount + "/" + preloadTotal + ")";
+function makeBlackTransparent(img){
+  if(processedImages.has(img.src)){
+    return processedImages.get(img.src);
   }
+
+  const off = document.createElement("canvas");
+  off.width = img.naturalWidth || img.width || SPRITE_WIDTH;
+  off.height = img.naturalHeight || img.height || SPRITE_HEIGHT;
+
+  const offCtx = off.getContext("2d");
+  offCtx.drawImage(img, 0, 0);
+
+  const imageData = offCtx.getImageData(0, 0, off.width, off.height);
+  const data = imageData.data;
+
+  for(let i = 0; i < data.length; i += 4){
+    if(data[i] < 12 && data[i + 1] < 12 && data[i + 2] < 12){
+      data[i + 3] = 0;
+    }
+  }
+
+  offCtx.putImageData(imageData, 0, 0);
+  processedImages.set(img.src, off);
+  return off;
 }
 
-function preloadAll() {
-  updateStartButton();
-  allImageSrcs.forEach(src => {
-    const img = new Image();
-    img.onload = () => {
-      imageCache[src] = img;
-      preloadCount++;
-      updateStartButton();
-    };
-    img.onerror = () => {
-      preloadCount++;
-      updateStartButton();
-      console.warn("Failed to load:", src);
-    };
-    img.src = src;
-  });
-}
-
-preloadAll();
-
-/* ========== PLAYER STATE ========== */
 let myPlayer = {
-  x: 350, y: 250, frame: 0,
-  facingLeft: false, currentDir: "front",
-  name: "", character: "original"
+  id:null,
+  x:350,
+  y:250,
+  frame:0,
+  facingLeft:false,
+  currentDir:"front",
+  name:"Player",
+  character:"original",
+  ready:false
 };
 
 const otherPlayers = {};
 
-/* ========== UI FUNCTIONS ========== */
-function selectChar(el) {
-  document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
-  el.classList.add("selected");
+function isMe(id){
+  return id && id === mySocketId;
 }
 
-function startGame() {
-  const input = document.getElementById("nameInput");
-  const name = input.value.trim();
+function mergePlayerFromServer(player){
+  if(!player || !player.id) return;
 
-  if (!name) {
-    input.classList.add("error");
-    input.placeholder = "Name is required!";
-    input.focus();
-    setTimeout(() => input.classList.remove("error"), 500);
+  if(isMe(player.id)){
+    myPlayer = {
+      ...myPlayer,
+      ...player,
+      id: player.id
+    };
+
+    delete otherPlayers[player.id];
     return;
   }
 
-  if (!imagesReady) return;
+  otherPlayers[player.id] = {
+    ...(otherPlayers[player.id] || {}),
+    ...player
+  };
+}
 
-  myPlayer.name = name.substring(0, 15);
-  myPlayer.character = document.querySelector(".selected").dataset.char;
+function removeWrongSelfFromOthers(){
+  if(mySocketId && otherPlayers[mySocketId]){
+    delete otherPlayers[mySocketId];
+  }
+}
+
+socket.on("connect", () => {
+  mySocketId = socket.id;
+  myPlayer.id = socket.id;
+  removeWrongSelfFromOthers();
+});
+
+socket.on("youAre", (id) => {
+  mySocketId = id;
+  myPlayer.id = id;
+  removeWrongSelfFromOthers();
+});
+
+function startGame(){
+  const selectedCharacter = document.querySelector(".char-option.selected").dataset.char;
+  const selectedName = document.getElementById("nameInput").value.trim() || "Player";
+
+  myPlayer.name = selectedName;
+  myPlayer.character = selectedCharacter;
+  myPlayer.ready = true;
+  gameStarted = true;
 
   document.getElementById("start-screen").style.display = "none";
   document.getElementById("chat").style.display = "block";
-  document.getElementById("chat-hint").style.display = "block";
-  document.getElementById("player-count").style.display = "block";
-  gameStarted = true;
 
   socket.emit("setPlayerData", {
-    name: myPlayer.name,
-    character: myPlayer.character
+    name: selectedName,
+    character: selectedCharacter
   });
 }
 
-document.getElementById("nameInput").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") startGame();
+// Character selection UI
+document.querySelectorAll(".char-option").forEach(el => {
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
+    el.classList.add("selected");
+  });
 });
 
-/* ========== SOCKET EVENTS ========== */
 socket.on("currentPlayers", (players) => {
-  Object.keys(players).forEach(id => {
-    if (id !== socket.id) {
-      otherPlayers[id] = players[id];
-    }
-  });
-  updatePlayerCount();
+  Object.values(players).forEach(mergePlayerFromServer);
+  removeWrongSelfFromOthers();
 });
 
 socket.on("playerJoined", (player) => {
-  if (player.id !== socket.id) {
-    otherPlayers[player.id] = player;
-    updatePlayerCount();
-    addSystemMsg(player.name + " joined the world");
-  }
+  mergePlayerFromServer(player);
+});
+
+socket.on("playerUpdated", (player) => {
+  mergePlayerFromServer(player);
 });
 
 socket.on("playerMoved", (player) => {
-  if (player.id !== socket.id) {
-    otherPlayers[player.id] = player;
-  }
-});
-
-// *** THE FIX: when server confirms our own playerUpdated, sync myPlayer ***
-socket.on("playerUpdated", (player) => {
-  if (player.id === socket.id) {
-    myPlayer.name = player.name;
-    myPlayer.character = player.character;
-  } else {
-    otherPlayers[player.id] = player;
-  }
+  mergePlayerFromServer(player);
 });
 
 socket.on("playerDisconnected", (id) => {
-  const p = otherPlayers[id];
   delete otherPlayers[id];
-  updatePlayerCount();
-  if (p) addSystemMsg(p.name + " left the world");
 });
 
 socket.on("chatHistory", (history) => {
@@ -538,90 +361,46 @@ socket.on("chatMessage", (msg) => {
   addMessage(msg);
 });
 
-function updatePlayerCount() {
-  const count = 1 + Object.keys(otherPlayers).length;
-  document.getElementById("player-count").textContent = "Players online: " + count;
-}
-
-/* ========== CHAT ========== */
-const messagesDiv = document.getElementById("messages");
-const chatInput = document.getElementById("chatInput");
-
-function addMessage(msg) {
+function addMessage(msg){
   const div = document.createElement("div");
-  div.style.marginBottom = "6px";
-  div.innerHTML = `<b style="color:${msg.id === socket.id ? '#4ade80' : '#aaa'}">${escapeHtml(msg.name)}:</b> ${escapeHtml(msg.text)}`;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  div.textContent = `${msg.name}: ${msg.text}`;
+  div.style.marginBottom = "5px";
+
+  if(msg.id === mySocketId){
+    div.style.color = "#4ade80";
+  }
+
+  document.getElementById("messages").appendChild(div);
+  div.scrollIntoView();
 }
 
-function addSystemMsg(text) {
-  const div = document.createElement("div");
-  div.style.marginBottom = "6px";
-  div.style.color = "#888";
-  div.style.fontStyle = "italic";
-  div.style.fontSize = "12px";
-  div.textContent = text;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-chatInput.addEventListener("focus", () => { chatFocused = true; });
-chatInput.addEventListener("blur", () => { chatFocused = false; });
-
-chatInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    const text = chatInput.value.trim();
-    if (text) {
+document.getElementById("chatInput").addEventListener("keypress", (e) => {
+  if(e.key === "Enter"){
+    const text = e.target.value.trim();
+    if(text){
       socket.emit("chatMessage", text);
-      chatInput.value = "";
-      chatInput.blur();
+      e.target.value = "";
     }
   }
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !chatFocused && gameStarted) {
-    chatInput.focus();
+function bindMobile(btn, key){
+  const el = document.getElementById(btn);
+
+  el.addEventListener("touchstart", (e) => {
     e.preventDefault();
-  }
-});
+    keys[key] = true;
+  }, { passive:false });
 
-/* ========== INPUT ========== */
-document.addEventListener("keydown", (e) => {
-  if (chatFocused) return;
-  const k = e.key.toLowerCase();
-  if (k === "arrowup" || k === "w") { keys["w"] = true; e.preventDefault(); }
-  if (k === "arrowdown" || k === "s") { keys["s"] = true; e.preventDefault(); }
-  if (k === "arrowleft" || k === "a") { keys["a"] = true; e.preventDefault(); }
-  if (k === "arrowright" || k === "d") { keys["d"] = true; e.preventDefault(); }
-});
+  el.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    keys[key] = false;
+  }, { passive:false });
 
-document.addEventListener("keyup", (e) => {
-  const k = e.key.toLowerCase();
-  if (k === "arrowup" || k === "w") keys["w"] = false;
-  if (k === "arrowdown" || k === "s") keys["s"] = false;
-  if (k === "arrowleft" || k === "a") keys["a"] = false;
-  if (k === "arrowright" || k === "d") keys["d"] = false;
-});
-
-function bindMobile(btnId, key) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  const press = (e) => { if(e.cancelable) e.preventDefault(); keys[key] = true; btn.classList.add("pressed"); };
-  const release = (e) => { if(e.cancelable) e.preventDefault(); keys[key] = false; btn.classList.remove("pressed"); };
-  btn.addEventListener("touchstart", press, {passive: false});
-  btn.addEventListener("touchend", release, {passive: false});
-  btn.addEventListener("touchcancel", release, {passive: false});
-  btn.addEventListener("mousedown", press);
-  btn.addEventListener("mouseup", release);
-  btn.addEventListener("mouseleave", release);
+  el.addEventListener("touchcancel", (e) => {
+    e.preventDefault();
+    keys[key] = false;
+  }, { passive:false });
 }
 
 bindMobile("up", "w");
@@ -629,19 +408,22 @@ bindMobile("down", "s");
 bindMobile("left", "a");
 bindMobile("right", "d");
 
-/* ========== GAME LOGIC ========== */
-function update() {
-  if (!gameStarted) return;
+function update(){
+  if(!gameStarted){
+    return;
+  }
 
-  let dx = 0, dy = 0;
-  if (keys["w"]) dy -= 1;
-  if (keys["s"]) dy += 1;
-  if (keys["a"]) dx -= 1;
-  if (keys["d"]) dx += 1;
+  let dx = 0;
+  let dy = 0;
+
+  if(keys["w"] || keys["arrowup"]) dy -= 1;
+  if(keys["s"] || keys["arrowdown"]) dy += 1;
+  if(keys["a"] || keys["arrowleft"]) dx -= 1;
+  if(keys["d"] || keys["arrowright"]) dx += 1;
 
   const moving = dx !== 0 || dy !== 0;
 
-  if (moving) {
+  if(moving){
     const len = Math.hypot(dx, dy);
     dx = (dx / len) * MOVE_SPEED;
     dy = (dy / len) * MOVE_SPEED;
@@ -649,25 +431,30 @@ function update() {
     myPlayer.x += dx;
     myPlayer.y += dy;
 
-    myPlayer.x = Math.max(0, Math.min(CANVAS_W - SPRITE_WIDTH, myPlayer.x));
-    myPlayer.y = Math.max(GROUND_OFFSET, Math.min(CANVAS_H, myPlayer.y));
+    if(dy < 0){
+      myPlayer.currentDir = "back";
+    }else if(dy > 0){
+      myPlayer.currentDir = "front";
+    }else{
+      myPlayer.currentDir = "side";
+    }
 
-    if (dy < 0) myPlayer.currentDir = "back";
-    else if (dy > 0) myPlayer.currentDir = "front";
-    else myPlayer.currentDir = "side";
-
-    myPlayer.facingLeft = dx < 0;
+    if(dx !== 0){
+      myPlayer.facingLeft = dx < 0;
+    }
 
     animationTimer++;
-    if (animationTimer >= FRAME_DELAY) {
+    if(animationTimer >= FRAME_DELAY){
       myPlayer.frame = (myPlayer.frame + 1) % 4;
       animationTimer = 0;
     }
-  } else {
+  }else{
     myPlayer.frame = 0;
-    animationTimer = 0;
   }
 
+  // IMPORTANT:
+  // Movement sends ONLY movement.
+  // It does NOT send character/name, so it cannot overwrite the chosen skin.
   socket.volatile.emit("playerMovement", {
     x: myPlayer.x,
     y: myPlayer.y,
@@ -677,104 +464,81 @@ function update() {
   });
 }
 
-function getFrames(player) {
-  const ch = characters[player.character] || characters.original;
-  if (player.currentDir === "back") return ch.back;
-  if (player.currentDir === "side") return ch.side;
-  return ch.front;
+function getFrames(player){
+  const char = characters[player.character] || characters.original;
+
+  if(player.currentDir === "back"){
+    return char.back;
+  }
+
+  if(player.currentDir === "side"){
+    return char.side;
+  }
+
+  return char.front;
 }
 
-function drawPlayer(player, isLocal) {
+function drawPlayer(player){
+  if(!player) return;
+
   const frames = getFrames(player);
-  const src = frames[player.frame];
-  if (!src) return;
+  let img = frames[player.frame || 0];
 
-  let img = getImage(src);
-  if (!img) {
-    const fallbackSrc = frames[0];
-    if (fallbackSrc) img = getImage(fallbackSrc);
-  }
-  if (!img || !img.complete || img.naturalWidth === 0) return;
+  if(!img || !img.complete) return;
 
-  if (player.character === "blue") {
-    const processed = makeBlackTransparent(img);
-    if (processed) img = processed;
+  if(player.character === "blue"){
+    img = makeBlackTransparent(img);
   }
 
   const drawX = Math.round(player.x);
   const drawY = Math.round(player.y - GROUND_OFFSET);
 
-  ctx.save();
-  if (player.facingLeft) {
-    ctx.translate(drawX + SPRITE_WIDTH, drawY);
+  if(player.facingLeft){
+    ctx.save();
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
-  } else {
+    ctx.drawImage(img, -drawX - SPRITE_WIDTH, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
+    ctx.restore();
+  }else{
     ctx.drawImage(img, drawX, drawY, SPRITE_WIDTH, SPRITE_HEIGHT);
   }
-  ctx.restore();
 
-  const name = (player.name || "Player").substring(0, 15);
-  ctx.font = "bold 13px Arial";
+  ctx.fillStyle = "white";
+  ctx.font = "bold 14px Arial";
   ctx.textAlign = "center";
-  const mw = ctx.measureText(name).width;
-  const tx = drawX + SPRITE_WIDTH / 2;
-  const ty = drawY - 8;
-
-  ctx.fillStyle = "rgba(0,0,0,0.65)";
-  ctx.beginPath();
-  ctx.roundRect(tx - mw/2 - 5, ty - 13, mw + 10, 18, 4);
-  ctx.fill();
-
-  ctx.fillStyle = isLocal ? "#4ade80" : "#fff";
-  ctx.fillText(name, tx, ty);
+  ctx.fillText(player.name || "Player", drawX + SPRITE_WIDTH / 2, drawY - 10);
 }
 
-function draw() {
-  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+function draw(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "#252525";
-  ctx.lineWidth = 1;
-  for (let x = 0; x <= CANVAS_W; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke();
-  }
-  for (let y = 0; y <= CANVAS_H; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke();
-  }
+  Object.values(otherPlayers).forEach(player => {
+    if(player.ready){
+      drawPlayer(player);
+    }
+  });
 
-  const all = [myPlayer, ...Object.values(otherPlayers)];
-  all.sort((a, b) => a.y - b.y);
-  all.forEach(p => drawPlayer(p, p.id === socket.id));
+  if(gameStarted){
+    drawPlayer(myPlayer);
+  }
 }
 
-/* ========== LOOP ========== */
-let lastTime = 0;
-const STEP = 1000 / 60;
-
-function loop(timestamp) {
-  requestAnimationFrame(loop);
-  const delta = timestamp - lastTime;
-  if (delta < STEP) return;
-  lastTime = timestamp - (delta % STEP);
+function loop(){
   update();
   draw();
+  requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
 
-/* ========== RESPONSIVE CANVAS ========== */
-function fitCanvas() {
-  const scale = Math.min(window.innerWidth / CANVAS_W, window.innerHeight / CANVAS_H);
-  const w = Math.floor(CANVAS_W * scale);
-  const h = Math.floor(CANVAS_H * scale);
-  canvas.style.width = w + "px";
-  canvas.style.height = h + "px";
-}
-window.addEventListener("resize", fitCanvas);
-fitCanvas();
+document.addEventListener("keydown", (e) => {
+  const tag = document.activeElement.tagName.toLowerCase();
+  if(tag === "input") return;
+  keys[e.key.toLowerCase()] = true;
+});
+
+document.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+loop();
 </script>
-
-</body>
-</html>
-
 </body>
 </html>
