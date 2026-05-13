@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
     players[socket.id].name = name.substring(0, 15);
     players[socket.id].character = data.character || "original";
 
-    // Broadcast to ALL players including sender, so everyone sees the update
+    // Broadcast to ALL players including sender
     io.emit("playerUpdated", players[socket.id]);
   });
 
