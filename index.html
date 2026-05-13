@@ -324,7 +324,6 @@ function startGame(){
   });
 }
 
-// Character selection UI
 document.querySelectorAll(".char-option").forEach(el => {
   el.addEventListener("click", () => {
     document.querySelectorAll(".char-option").forEach(e => e.classList.remove("selected"));
@@ -444,6 +443,7 @@ function update(){
     }
 
     animationTimer++;
+
     if(animationTimer >= FRAME_DELAY){
       myPlayer.frame = (myPlayer.frame + 1) % 4;
       animationTimer = 0;
@@ -452,7 +452,6 @@ function update(){
     myPlayer.frame = 0;
   }
 
-  // IMPORTANT:
   // Movement sends ONLY movement.
   // It does NOT send character/name, so it cannot overwrite the chosen skin.
   socket.volatile.emit("playerMovement", {
@@ -530,7 +529,11 @@ function loop(){
 
 document.addEventListener("keydown", (e) => {
   const tag = document.activeElement.tagName.toLowerCase();
-  if(tag === "input") return;
+
+  if(tag === "input"){
+    return;
+  }
+
   keys[e.key.toLowerCase()] = true;
 });
 
